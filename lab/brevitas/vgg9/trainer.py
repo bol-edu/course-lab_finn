@@ -33,9 +33,10 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from torchvision.datasets import MNIST, CIFAR10
 
-from .logger import Logger, TrainingEpochMeters, EvalEpochMeters
-from .models import model_with_cfg
-from .models.losses import SqrHingeLoss
+from logger import Logger, TrainingEpochMeters, EvalEpochMeters
+from models import model_with_cfg
+from models.losses import SqrHingeLoss
+from brevitas.export import FINNManager
 
 
 class MirrorMNIST(MNIST):
@@ -91,8 +92,8 @@ class Trainer(object):
         if not args.dry_run:
             self.checkpoints_dir_path = os.path.join(self.output_dir_path, 'checkpoints')
             if not args.resume:
-                os.mkdir(self.output_dir_path)
-                os.mkdir(self.checkpoints_dir_path)
+                os.makedirs(self.output_dir_path)
+                os.makedirs(self.checkpoints_dir_path)
         self.logger = Logger(self.output_dir_path, args.dry_run)
 
         # Randomness
@@ -153,7 +154,10 @@ class Trainer(object):
             print('Loading model checkpoint at: {}'.format(args.resume))
             package = torch.load(args.resume, map_location='cpu')
             model_state_dict = package['state_dict']
-            model.load_state_dict(model_state_dict, strict=args.strict)
+            model.load_state_dict(model_state_dict)
+             FINNManager.export(model, 
+                                input_shape=(1, 3, 32, 32), 
+                                export_path=os.path.join(self.output_dir_path,'best.onnx'))
 
         if args.gpus is not None and len(args.gpus) == 1:
             model = model.to(device=self.device)
