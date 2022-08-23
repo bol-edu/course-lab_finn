@@ -53,12 +53,13 @@ class CNV(Module):
             narrow_range=False,
             restrict_scaling_type=RestrictValueType.POWER_OF_TWO))
 
-        for out_ch, is_pool_enabled in CNV_OUT_CH_POOL:
+        for out_ch, is_pool_enabled, pad in CNV_OUT_CH_POOL:
             self.conv_features.append(QuantConv2d(
                 kernel_size=KERNEL_SIZE,
                 in_channels=in_ch,
                 out_channels=out_ch,
                 bias=False,
+                padding=pad,
                 weight_quant=CommonWeightQuant,
                 weight_bit_width=weight_bit_width))
             in_ch = out_ch
